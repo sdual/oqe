@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-
 use nalgebra::DVector;
+use std::collections::HashMap;
 
 use crate::encode::accum::PosteriorProbAccumulator;
 use crate::encode::accum::PriorProbAccumulator;
 
+use super::factor::list_shrinkage_factor;
 use super::factor::shrinkage_factor;
 
 pub struct OnlineTargetStatEncoder {
@@ -32,11 +32,11 @@ impl OnlineTargetStatEncoder {
             let posterior_accum = self.posterior_accum_maps[feature_index].get_mut(feature_value);
             match posterior_accum {
                 Some(accum) => {
+                    accum.increment(target);
                     let factor = shrinkage_factor(accum.total_count, self.param);
                     let encoded_value =
                         factor * accum.prob() + (1.0 - factor) * self.prior_accum.prob();
                     encoded_vector.push(encoded_value);
-                    accum.increment(target);
                 }
                 _ => {
                     let mut post_accum = PosteriorProbAccumulator::new();
@@ -56,6 +56,101 @@ impl OnlineTargetStatEncoder {
         encoded_vector
     }
 }
+
+pub struct OnlineListTargetStatEncoder {
+    posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>>,
+    prior_accum: PriorProbAccumulator,
+    param: f32,
+}
+
+impl OnlineListTargetStatEncoder {
+    pub fn new(cat_list_feature_dim: usize, param: f32) -> Self {
+        let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>> = (0usize
+            ..cat_list_feature_dim)
+            .map(|_| HashMap::new())
+            .collect();
+
+        OnlineListTargetStatEncoder {
+            posterior_accum_maps: post_accum_maps,
+            prior_accum: PriorProbAccumulator::new(),
+            param,
+        }
+    }
+
+    pub fn accum_transform(
+        &mut self,
+        cat_list_features: &DVector<Vec<String>>,
+        target: i32,
+    ) -> Vec<f32> {
+        let mut encoded_vector = Vec::new();
+        for (feature_index, feature_list) in cat_list_features.iter().enumerate() {
+            let mut encoded_value = 0.0;
+            let mut total_factor = 0.0;
+            for feature_value in feature_list {
+                let posterior_accum =
+                    self.posterior_accum_maps[feature_index].get_mut(feature_value);
+                match posterior_accum {
+                    Some(accum) => {
+                        accum.increment(target);
+                        let factor = list_shrinkage_factor(
+                            accum.total_count,
+                            self.prior_accum.total_count,
+                            self.param,
+                        );
+                        encoded_value += factor * accum.prob();
+                        total_factor += factor;
+                    }
+                    _ => {
+                        let mut post_accum = PosteriorProbAccumulator::new();
+                        post_accum.increment(target);
+                        self.posterior_accum_maps[feature_index]
+                            .insert(feature_value.clone(), post_accum);
+                        let added_post_accum =
+                            &self.posterior_accum_maps[feature_index][feature_value];
+
+                        let factor = list_shrinkage_factor(
+                            added_post_accum.total_count,
+                            self.prior_accum.total_count,
+                            self.param,
+                        );
+                        encoded_value += factor * added_post_accum.prob();
+                        total_factor += factor;
+                    }
+                }
+            }
+            encoded_value += (1.0 - total_factor) * self.prior_accum.prob();
+            encoded_vector.push(encoded_value);
+        }
+        self.prior_accum.increment(target);
+        encoded_vector
+    }
+}
+
+// pub struct OnlineMapTargetStatEncoder {
+//     posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>>,
+//     prior_accum: PriorProbAccumulator,
+//     param: f32,
+// }
+
+// impl OnlineMapTargetStatEncoder {
+//     pub fn new(cat_map_feature_dim: usize, param: f32) -> Self {
+//         let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>> = (0usize
+//             ..cat_map_feature_dim)
+//             .map(|_| HashMap::new())
+//             .collect();
+
+//         OnlineMapTargetStatEncoder {
+//             posterior_accum_maps: post_accum_maps,
+//             prior_accum: PriorProbAccumulator::new(),
+//             param,
+//         }
+//     }
+
+//     pub fn accum_transform(&mut self, cat_fatures: &DVector<String>, target: i32) -> Vec<f32> {
+//         let encoded_vector = Vec::new();
+
+//     }
+// }
 
 #[cfg(test)]
 mod test {
@@ -81,11 +176,11 @@ mod test {
     #[test]
     fn test_with_titanic_dataset() {
         let feature_dim = 10;
-        let feature_filepath = "/Users/qtk/work/python/titanic-data/titanic_categorical.csv";
+        let feature_filepath = "./titanic_categorical.csv";
 
         let has_headers = true;
         let all_df = StringDataFrame::read_csv(feature_filepath, has_headers, feature_dim);
-        let mut encoder = OnlineTargetStatEncoder::new(feature_dim, 0.5);
+        let mut encoder = OnlineTargetStatEncoder::new(feature_dim, 10.0);
 
         for (feature, label) in all_df.features.iter().zip(all_df.labels) {
             let result = encoder.accum_transform(&DVector::from_vec(feature.to_vec()), label);
