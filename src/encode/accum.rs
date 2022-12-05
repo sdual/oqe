@@ -24,7 +24,7 @@ impl PosteriorProbAccumulator {
 }
 
 pub struct PriorProbAccumulator {
-    total_count: i64,
+    pub total_count: i64,
     positive_target_count: i64,
 }
 
