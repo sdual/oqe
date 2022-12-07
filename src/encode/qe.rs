@@ -27,7 +27,6 @@ impl OnlineTargetStatEncoder {
 
     pub fn accum_transform(&mut self, cat_features: &DVector<String>, target: i32) -> Vec<f32> {
         let mut encoded_vector = Vec::new();
-        self.prior_accum.increment(target);
 
         for (feature_index, feature_value) in cat_features.iter().enumerate() {
             let posterior_accum = self.posterior_accum_maps[feature_index].get_mut(feature_value);
@@ -55,6 +54,7 @@ impl OnlineTargetStatEncoder {
                 }
             }
         }
+        self.prior_accum.increment(target);
         encoded_vector
     }
 }
@@ -85,7 +85,6 @@ impl OnlineListTargetStatEncoder {
         target: i32,
     ) -> Vec<f32> {
         let mut encoded_vector = Vec::new();
-        self.prior_accum.increment(target);
 
         for (feature_index, feature_list) in cat_list_features.iter().enumerate() {
             let mut encoded_value = 0.0;
@@ -127,6 +126,7 @@ impl OnlineListTargetStatEncoder {
             encoded_value += (1.0 - total_factor) * self.prior_accum.prob();
             encoded_vector.push(encoded_value);
         }
+        self.prior_accum.increment(target);
         encoded_vector
     }
 }
