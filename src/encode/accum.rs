@@ -12,7 +12,11 @@ impl PosteriorProbAccumulator {
     }
 
     pub fn prob(&self) -> f32 {
-        (self.target_value_count as f64 / self.total_count as f64) as f32
+        if self.total_count == 0 {
+            0.0
+        } else {
+            (self.target_value_count as f64 / self.total_count as f64) as f32
+        }
     }
 
     pub fn increment(&mut self, target: i32) {
