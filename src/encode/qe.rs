@@ -34,7 +34,7 @@ impl OnlineTargetStatEncoder {
                 Some(accum) => {
                     let factor = shrinkage_factor(accum.total_count, self.param);
                     let encoded_value =
-                        factor * accum.prob() + (1.0 - factor) * self.prior_accum.prob();
+                        factor * accum.prob(); // + (1.0 - factor) * self.prior_accum.prob();
                     encoded_vector.push(encoded_value);
                     accum.increment(target);
                 }
@@ -48,7 +48,7 @@ impl OnlineTargetStatEncoder {
 
                     let factor = shrinkage_factor(added_post_accum.total_count, self.param);
                     let encoded_value =
-                        factor * added_post_accum.prob() + (1.0 - factor) * self.prior_accum.prob();
+                        factor * added_post_accum.prob(); // (1.0 - factor) * self.prior_accum.prob();
                     encoded_vector.push(encoded_value);
                     added_post_accum.increment(target);
                 }
@@ -95,9 +95,8 @@ impl OnlineListTargetStatEncoder {
                     self.posterior_accum_maps[feature_index].get_mut(feature_value);
                 match posterior_accum {
                     Some(accum) => {
-                        let factor = list_shrinkage_factor(
+                        let factor = shrinkage_factor(
                             accum.total_count,
-                            self.prior_accum.total_count,
                             self.param,
                         );
                         encoded_value += factor * accum.prob();
@@ -112,9 +111,8 @@ impl OnlineListTargetStatEncoder {
                             .get_mut(feature_value)
                             .unwrap();
 
-                        let factor = list_shrinkage_factor(
+                        let factor = shrinkage_factor(
                             added_post_accum.total_count,
-                            self.prior_accum.total_count,
                             self.param,
                         );
                         encoded_value += factor * added_post_accum.prob();
@@ -123,7 +121,7 @@ impl OnlineListTargetStatEncoder {
                     }
                 }
             }
-            encoded_value += (1.0 - total_factor) * self.prior_accum.prob();
+            // encoded_value += (1.0 - total_factor) * self.prior_accum.prob();
             encoded_vector.push(encoded_value);
         }
         self.prior_accum.increment(target);
