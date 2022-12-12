@@ -95,10 +95,11 @@ impl OnlineListTargetStatEncoder {
                     self.posterior_accum_maps[feature_index].get_mut(feature_value);
                 match posterior_accum {
                     Some(accum) => {
-                        let factor = shrinkage_factor(
-                            accum.total_count,
-                            self.param,
-                        );
+                        // let factor = shrinkage_factor(
+                        //     accum.total_count,
+                        //     self.param,
+                        // );
+                        let factor = 1.0;
                         encoded_value += factor * accum.prob();
                         total_factor += factor;
                         accum.increment(target);
@@ -111,10 +112,11 @@ impl OnlineListTargetStatEncoder {
                             .get_mut(feature_value)
                             .unwrap();
 
-                        let factor = shrinkage_factor(
-                            added_post_accum.total_count,
-                            self.param,
-                        );
+                        // let factor = shrinkage_factor(
+                        //     added_post_accum.total_count,
+                        //     self.param,
+                        // );
+                        let factor = 1.0;
                         encoded_value += factor * added_post_accum.prob();
                         total_factor += factor;
                         added_post_accum.increment(target);
