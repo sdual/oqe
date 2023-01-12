@@ -1,4 +1,4 @@
-use nalgebra::DVector;
+use nalgebra::{DVector, SVector};
 use std::collections::HashMap;
 
 use crate::encode::accum::PosteriorProbAccumulator;
@@ -25,7 +25,7 @@ impl OnlineTargetStatEncoder {
         }
     }
 
-    pub fn accum_transform(&mut self, cat_features: &DVector<String>, target: i32) -> Vec<f32> {
+    pub fn accum_transform(&mut self, cat_features: &Vec<String>, target: i32) -> Vec<f32> {
         let mut encoded_vector = Vec::new();
 
         for (feature_index, feature_value) in cat_features.iter().enumerate() {
@@ -81,7 +81,7 @@ impl OnlineListTargetStatEncoder {
 
     pub fn accum_transform(
         &mut self,
-        cat_list_features: &DVector<Vec<String>>,
+        cat_list_features: &Vec<Vec<String>>,
         target: i32,
     ) -> Vec<f32> {
         let mut encoded_vector = Vec::new();
@@ -160,7 +160,6 @@ impl OnlineListTargetStatEncoder {
 #[cfg(test)]
 mod test {
     use df::dataframe::reader::StringDataFrame;
-    use nalgebra::DVector;
 
     use super::OnlineTargetStatEncoder;
 
@@ -188,7 +187,7 @@ mod test {
         let mut encoder = OnlineTargetStatEncoder::new(feature_dim, 10.0);
 
         for (feature, label) in all_df.features.iter().zip(all_df.labels) {
-            let result = encoder.accum_transform(&DVector::from_vec(feature.to_vec()), label);
+            let result = encoder.accum_transform(&feature, label);
             println!("{:?}", result);
         }
     }
