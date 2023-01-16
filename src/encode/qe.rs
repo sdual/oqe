@@ -1,5 +1,7 @@
-use nalgebra::{DVector, SVector};
-use fnv::FnvHashMap;
+use std::collections::HashMap;
+use std::hash::{BuildHasherDefault, Hash};
+
+use rustc_hash::FxHasher;
 
 use crate::encode::accum::PosteriorProbAccumulator;
 use crate::encode::accum::PriorProbAccumulator;
@@ -7,16 +9,19 @@ use crate::encode::accum::PriorProbAccumulator;
 use super::factor::list_shrinkage_factor;
 use super::factor::shrinkage_factor;
 
+type Hasher = BuildHasherDefault<FxHasher>;
+
+
 pub struct OnlineTargetStatEncoder {
-    posterior_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>>,
+    posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator, Hasher>>,
     prior_accum: PriorProbAccumulator,
     param: f32,
 }
 
 impl OnlineTargetStatEncoder {
     pub fn new(cat_feature_dim: usize, param: f32) -> Self {
-        let post_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>> =
-            (0usize..cat_feature_dim).map(|_| FnvHashMap::default()).collect();
+        let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator, Hasher>> =
+            (0usize..cat_feature_dim).map(|_| HashMap::<String, PosteriorProbAccumulator, Hasher>::default()).collect();
 
         OnlineTargetStatEncoder {
             posterior_accum_maps: post_accum_maps,
@@ -60,16 +65,16 @@ impl OnlineTargetStatEncoder {
 }
 
 pub struct OnlineListTargetStatEncoder {
-    posterior_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>>,
+    posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator, Hasher>>,
     prior_accum: PriorProbAccumulator,
     param: f32,
 }
 
 impl OnlineListTargetStatEncoder {
     pub fn new(cat_list_feature_dim: usize, param: f32) -> Self {
-        let post_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>> = (0usize
+        let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator, Hasher>> = (0usize
             ..cat_list_feature_dim)
-            .map(|_| FnvHashMap::default())
+            .map(|_| HashMap::<String, PosteriorProbAccumulator, Hasher>::default())
             .collect();
 
         OnlineListTargetStatEncoder {
@@ -163,7 +168,7 @@ mod test {
 
     use super::OnlineTargetStatEncoder;
 
-    // #[test]
+// #[test]
     // fn test_online_target_stat_encoder_transform() {
     //     let test_cat_vec = DVector::from_vec(vec!["a".to_string(), "b".to_string()]);
     //     let test_cat_vec2 = DVector::from_vec(vec!["c".to_string(), "b".to_string()]);
