@@ -1,5 +1,5 @@
 use nalgebra::{DVector, SVector};
-use std::collections::HashMap;
+use fnv::FnvHashMap;
 
 use crate::encode::accum::PosteriorProbAccumulator;
 use crate::encode::accum::PriorProbAccumulator;
@@ -8,15 +8,15 @@ use super::factor::list_shrinkage_factor;
 use super::factor::shrinkage_factor;
 
 pub struct OnlineTargetStatEncoder {
-    posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>>,
+    posterior_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>>,
     prior_accum: PriorProbAccumulator,
     param: f32,
 }
 
 impl OnlineTargetStatEncoder {
     pub fn new(cat_feature_dim: usize, param: f32) -> Self {
-        let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>> =
-            (0usize..cat_feature_dim).map(|_| HashMap::new()).collect();
+        let post_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>> =
+            (0usize..cat_feature_dim).map(|_| FnvHashMap::default()).collect();
 
         OnlineTargetStatEncoder {
             posterior_accum_maps: post_accum_maps,
@@ -60,16 +60,16 @@ impl OnlineTargetStatEncoder {
 }
 
 pub struct OnlineListTargetStatEncoder {
-    posterior_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>>,
+    posterior_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>>,
     prior_accum: PriorProbAccumulator,
     param: f32,
 }
 
 impl OnlineListTargetStatEncoder {
     pub fn new(cat_list_feature_dim: usize, param: f32) -> Self {
-        let post_accum_maps: Vec<HashMap<String, PosteriorProbAccumulator>> = (0usize
+        let post_accum_maps: Vec<FnvHashMap<String, PosteriorProbAccumulator>> = (0usize
             ..cat_list_feature_dim)
-            .map(|_| HashMap::new())
+            .map(|_| FnvHashMap::default())
             .collect();
 
         OnlineListTargetStatEncoder {
